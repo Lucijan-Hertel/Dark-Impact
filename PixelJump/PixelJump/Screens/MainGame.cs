@@ -17,11 +17,10 @@ namespace PixelJump.Screens
         double futureVelocity = 0;
         double timeTaken = 0;
         double totalDistanceTravelled = 0;
+        double meter = 25;
 
         public void Update(ref bool alreadyUsed, ref bool oneTimeSet)
         {
-            fullDistance = player.DistancePlayerToNextPlatformBelow(player, singlePlatform.Platforms);
-
             if (!alreadyUsed)
             {
                 singlePlatform.Platforms.Add(new Platform(new Vector2(200, 400), 60, 10, RED));
@@ -29,13 +28,13 @@ namespace PixelJump.Screens
                 Console.WriteLine(fullDistance);
             }
             
-            currentDistance = player.GravitationalDistancesCentre(gravitationalAcceleration, ref futureVelocity, ref timeTaken, ref fullDistance, ref totalDistanceTravelled, singlePlatform.Platforms, player, ref oneTimeSet);
-            Console.WriteLine(currentDistance);
+            currentDistance = player.GravitationalDistancesCentre(gravitationalAcceleration, ref futureVelocity, ref timeTaken, ref fullDistance, ref totalDistanceTravelled, meter, singlePlatform.Platforms, player, ref oneTimeSet);
+            //Console.WriteLine(currentDistance);
         }
 
         public void Draw()
         {
-            player.ChangePosition(currentDistance, player);
+            player.ChangePosition(currentDistance, meter, player);
 
             foreach(Platform platform in singlePlatform.Platforms)
             {

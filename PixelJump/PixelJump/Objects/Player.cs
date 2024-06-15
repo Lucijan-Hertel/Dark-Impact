@@ -38,23 +38,27 @@ namespace PixelJump
             DrawRectangle(posx, posy, size, size, color);
         }
 
-        public double GravitationalDistancesCentre(double gravitationalAcceleration,ref double futureVelocity,ref double timeTaken, ref double fullDistance, ref double totalDistanceTravelled, List<Platform> platforms, Player player, ref bool oneTimeSet)
+        public double GravitationalDistancesCentre(double gravitationalAcceleration,ref double futureVelocity,ref double timeTaken, ref double fullDistance, ref double totalDistanceTravelled, double meter, List<Platform> platforms, Player player, ref bool oneTimeSet)
         {
             double distanceTravelledInFrame;
+            double range;
 
             if (!oneTimeSet)
             {
-                fullDistance = DistancePlayerToNextPlatformBelow(player, platforms);
+                fullDistance = DistancePlayerToNextPlatformBelow(meter, player, platforms);
                 timeTaken = TimeTakenToReachPlatform(timeTaken, fullDistance, gravitationalAcceleration, player);
                 futureVelocity = player.CurrentVelocity + gravitationalAcceleration * (timeUsed + GetFrameTime());
                 oneTimeSet = true;
             }
 
-            distanceTravelledInFrame = GravitationalDistances(futureVelocity, gravitationalAcceleration, ref timeUsed);
+            distanceTravelledInFrame = GravitationalDistances(gravitationalAcceleration, meter, ref timeUsed);
+            //Console.WriteLine(totalDistanceTravelled);
 
-            if (distanceTravelledInFrame < fullDistance + totalDistanceTravelled)
+            if (distanceTravelledInFrame < fullDistance - totalDistanceTravelled)
             {
-                return fullDistance + totalDistanceTravelled;
+                range = fullDistance - totalDistanceTravelled;
+                totalDistanceTravelled = fullDistance;
+                return range;
             }
             else
             {
@@ -69,17 +73,17 @@ namespace PixelJump
         /// <param name="player"></param>
         /// <param name="platforms"></param>
         /// <returns>double minimumDistance</returns>
-        public double DistancePlayerToNextPlatformBelow(Player player, List<Platform> platforms)
+        public double DistancePlayerToNextPlatformBelow(double meter, Player player, List<Platform> platforms)
         {
-            double minimumDistance = -GetScreenHeight() + Position.Y;
+            double minimumDistance = (-GetScreenHeight() + Position.Y + player.size) / meter;
 
             foreach (Platform platform in platforms)
             {
                 if (platform.Position.Y >= player.position.Y + player.size && (platform.Position.X - (platform.Width / 2)) <= player.position.X || player.position.X > (platform.Position.X + (platform.Width / 2)))
                 {
-                    if (minimumDistance <= -platform.Position.Y + Position.Y + player.size)
+                    if (minimumDistance <= (-platform.Position.Y + Position.Y + player.size) / meter)
                     {
-                        minimumDistance = -platform.Position.Y + Position.Y + player.size;
+                        minimumDistance = (-platform.Position.Y + Position.Y + player.size) / meter;
                     }
                 }
             }
@@ -104,17 +108,18 @@ namespace PixelJump
             return timeTaken;
         }
 
-        public double GravitationalDistances(double futureVelocity, double gravitationalAcceleration, ref double timeUsed)
+        public double GravitationalDistances(double gravitationalAcceleration, double meter, ref double timeUsed)
         {
             double firstRangeEnd = currentVelocity * timeUsed + 0.5 * gravitationalAcceleration * Math.Pow(timeUsed, 2);
             double secondRangeEnd = currentVelocity * (timeUsed + GetFrameTime()) + 0.5 * gravitationalAcceleration * Math.Pow(timeUsed + GetFrameTime(), 2);
-            Console.WriteLine(timeUsed + GetFrameTime());
+            Console.WriteLine(((secondRangeEnd - firstRangeEnd) / meter) / (GetFrameTime()));
             timeUsed = timeUsed + GetFrameTime();
-            return secondRangeEnd - firstRangeEnd;
+            return (secondRangeEnd - firstRangeEnd) / meter; //The meter because in here we convert pixels in meters to make to model more realistic
         }
 
-        public void ChangePosition(double currentDistance, Player player)
+        public void ChangePosition(double currentDistance, double meter, Player player)
         {
+            currentDistance = currentDistance * meter; // Convert back in pixels
             player.Position = new Vector2(player.Position.X, player.Position.Y - (float)currentDistance);
         }
     }
