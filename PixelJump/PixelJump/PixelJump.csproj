@@ -12,8 +12,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Remove="Screens\" />
+    <None Remove="Objects\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Screens\" />
+    <Folder Include="Objects\" />
   </ItemGroup>
 </Project>

@@ -1,4 +1,34 @@
 ﻿<Properties StartupConfiguration="{9A5A2D71-865F-41B3-A9BD-554D09ECD106}|Default">
-  <MonoDevelop.Ide.ItemProperties.PixelJump FirstBuild="True" />
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.ItemProperties.PixelJump PreferredExecutionTarget="MonoDevelop.Default" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="PixelJump/Objects/Player.cs">
+    <Files>
+      <File FileName="PixelJump/Screens/MainGame.cs" Line="16" Column="48" />
+      <File FileName="PixelJump/Objects/Player.cs" Line="53" Column="120" />
+      <File FileName="PixelJump/Screens/Program.cs" Line="33" Column="1" />
+      <File FileName="PixelJump/Objects/Platform.cs" Line="32" Column="1" />
+    </Files>
+    <Pads>
+      <Pad Id="ProjectPad">
+        <State name="__root__">
+          <Node name="PixelJump" expanded="True">
+            <Node name="PixelJump" expanded="True">
+              <Node name="Objects" expanded="True">
+                <Node name="Player.cs" selected="True" />
+              </Node>
+              <Node name="Screens" expanded="True" />
+            </Node>
+          </Node>
+        </State>
+      </Pad>
+      <Pad Id="MonoDevelop.Debugger.WatchPad">
+        <State />
+      </Pad>
+    </Pads>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
   <MultiItemStartupConfigurations />
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
 </Properties>
