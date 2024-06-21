@@ -11,53 +11,68 @@ namespace PixelJump
 {
     public class Player
     {
-        int size = 50;
+        Vector2 size = new Vector2();
         Raylib_CsLo.Color color = RED;
-        Vector2 position;
-        double mass;
-        double currentVelocity;
-        double timeUsed = 0;
+        float mass;
+        Vector2 position = new Vector2();
+        Vector2 velocity = new Vector2();
+        Vector2 acceleration = new Vector2();
 
-        public Player(int size, Vector2 position, Raylib_CsLo.Color color, double mass, double currentVelocity) //Generates a new player object everytime called
+        public Player(Vector2 size, Vector2 position, Vector2 velocity, Vector2 acceleration, Raylib_CsLo.Color color, float mass) //Generates a new player object everytime called
         {
             this.size = size;
-            this.color = color;
             this.position = position;
+            this.velocity = velocity;
+            this.acceleration = acceleration;
             this.mass = mass;
-            this.currentVelocity = currentVelocity;
+            this.color = color;
         }
 
-        public int Size { get => size; set => size = value; }
-        public Raylib_CsLo.Color Color { get => color; set => color = value; }
+        public Vector2 Size { get => size; set => size = value; }
         public Vector2 Position { get => position; set => position = value; }
-        public double Mass { get => mass; set => mass = value; }
-        public double CurrentVelocity { get => currentVelocity; set => currentVelocity = value; }
+        public Vector2 Velocity { get => velocity; set => velocity = value; }
+        public Vector2 Acceleration { get => acceleration; set => acceleration = value; }
+        public float Mass { get => mass; set => mass = value; }
+        public Raylib_CsLo.Color Color { get => color; set => color = value; }
 
-        public void DrawPlayer(int posx, int posy, int size, Raylib_CsLo.Color color) //Draws player when called => Easier to identify in code when player is drawn && easier to search for
+        public void DrawPlayer(int posx, int posy, int width, int height, Raylib_CsLo.Color color) //Draws player when called => Easier to identify in code when player is drawn && easier to search for
         {
-            DrawRectangle(posx, posy, size, size, color);
+            DrawRectangle(posx, posy, width, height, color);
         }
 
-        public double GravitationalDistancesCentre(double gravitationalAcceleration,ref double futureVelocity,ref double timeTaken, ref double fullDistance, ref double totalDistanceTravelled, double meter, List<Platform> platforms, Player player, ref bool oneTimeSet)
+        public float GravitationalDistancesCenter(float timeTaken, ref float fullDistance, ref Vector2 timeUsed, ref float totalDistanceTravelled, float meter, List<Platform> platforms, Player player, ref bool oneTimeSet, ref bool distanceCalculated, ref bool distanceWas0)
         {
-            double distanceTravelledInFrame;
-            double range;
+            float distanceTravelledInFrame = 0;
+            float range;
 
             if (!oneTimeSet)
             {
-                fullDistance = DistancePlayerToNextPlatformBelow(meter, player, platforms);
-                timeTaken = TimeTakenToReachPlatform(timeTaken, fullDistance, gravitationalAcceleration, player);
-                futureVelocity = player.CurrentVelocity + gravitationalAcceleration * (timeUsed + GetFrameTime());
+                timeTaken = TimeTakenToReachPlatform(fullDistance, player.Acceleration.Y, player);
                 oneTimeSet = true;
             }
 
-            distanceTravelledInFrame = GravitationalDistances(gravitationalAcceleration, meter, ref timeUsed);
-            //Console.WriteLine(totalDistanceTravelled);
+            if (!distanceCalculated)
+            {
+                fullDistance = DistancePlayerToNextPlatformBelow(meter, oneTimeSet, player, platforms);
+                totalDistanceTravelled = 0;
+                distanceCalculated = true;
+            }
+            else if (DistancePlayerToNextPlatformBelow(meter, oneTimeSet, player, platforms) == 0) //-1/meter because there is a bug which lets the player draw 1 pixel over the platform
+            {
+                distanceWas0 = true;
+            }
+            else if (distanceWas0 && DistancePlayerToNextPlatformBelow(meter, oneTimeSet, player, platforms) != 0)
+            {
+                distanceCalculated = false;
+                distanceWas0 = false;
+            }
 
-            if (distanceTravelledInFrame < fullDistance - totalDistanceTravelled)
+            distanceTravelledInFrame = Distances(player.Acceleration.Y, meter, ref timeUsed.Y, player.Velocity.Y);
+
+            if (distanceTravelledInFrame < fullDistance - totalDistanceTravelled || distanceWas0)
             {
                 range = fullDistance - totalDistanceTravelled;
-                totalDistanceTravelled = fullDistance;
+                totalDistanceTravelled = totalDistanceTravelled + range;
                 return range;
             }
             else
@@ -72,18 +87,18 @@ namespace PixelJump
         /// </summary>
         /// <param name="player"></param>
         /// <param name="platforms"></param>
-        /// <returns>double minimumDistance</returns>
-        public double DistancePlayerToNextPlatformBelow(double meter, Player player, List<Platform> platforms)
+        /// <returns>float minimumDistance</returns>
+        public float DistancePlayerToNextPlatformBelow(float meter, bool oneTimeSet, Player player, List<Platform> platforms)
         {
-            double minimumDistance = (-GetScreenHeight() + Position.Y + player.size) / meter;
+            float minimumDistance = (-GetScreenHeight() + Position.Y + player.size.Y) / meter;
 
             foreach (Platform platform in platforms)
             {
-                if (platform.Position.Y >= player.position.Y + player.size && (platform.Position.X - (platform.Width / 2)) <= player.position.X || player.position.X > (platform.Position.X + (platform.Width / 2)))
+                if (platform.Position.Y >= (int) player.position.Y + player.size.Y && platform.Position.X <= (int) player.position.X + (int) player.size.X && (int) player.position.X <= (platform.Position.X + platform.Width))
                 {
-                    if (minimumDistance <= (-platform.Position.Y + Position.Y + player.size) / meter)
+                    if (minimumDistance <= (-platform.Position.Y + (int) Position.Y + player.size.Y) / meter)
                     {
-                        minimumDistance = (-platform.Position.Y + Position.Y + player.size) / meter;
+                        minimumDistance = (-platform.Position.Y + (int) Position.Y + player.size.Y) / meter;
                     }
                 }
             }
@@ -91,10 +106,12 @@ namespace PixelJump
             return minimumDistance;
         }
 
-        public double TimeTakenToReachPlatform(double timeTaken, double fullDistance, double gravitationalAcceleration, Player player)
+        public float TimeTakenToReachPlatform(float fullDistance, float gravitationalAcceleration, Player player)
         {
-            double firstTimeCalculated = (-player.currentVelocity + Math.Sqrt(Math.Pow(currentVelocity, 2) -4 * gravitationalAcceleration * -fullDistance)) / gravitationalAcceleration;
-            double secondTimeCalculated = (-player.currentVelocity - Math.Sqrt(Math.Pow(currentVelocity, 2) - 4 * gravitationalAcceleration * -fullDistance)) / gravitationalAcceleration;
+            float timeTaken;
+
+            float firstTimeCalculated = (-player.Velocity.Y + (float) Math.Sqrt(Math.Pow(player.Velocity.Y, 2) - 4 * gravitationalAcceleration * -fullDistance)) / gravitationalAcceleration;
+            float secondTimeCalculated = (-player.Velocity.Y - (float) Math.Sqrt(Math.Pow(player.Velocity.Y, 2) - 4 * gravitationalAcceleration * -fullDistance)) / gravitationalAcceleration;
 
             if(firstTimeCalculated > secondTimeCalculated)
             {
@@ -108,19 +125,63 @@ namespace PixelJump
             return timeTaken;
         }
 
-        public double GravitationalDistances(double gravitationalAcceleration, double meter, ref double timeUsed)
+        public float Distances(float Acceleration, float meter, ref float timeUsed, float velocity)
         {
-            double firstRangeEnd = currentVelocity * timeUsed + 0.5 * gravitationalAcceleration * Math.Pow(timeUsed, 2);
-            double secondRangeEnd = currentVelocity * (timeUsed + GetFrameTime()) + 0.5 * gravitationalAcceleration * Math.Pow(timeUsed + GetFrameTime(), 2);
-            Console.WriteLine(((secondRangeEnd - firstRangeEnd) / meter) / (GetFrameTime()));
+
+            Console.WriteLine(Acceleration + ", " + meter + ", " + timeUsed + ", " + velocity);
+
+            float firstRangeEnd = velocity * timeUsed + (float) 0.5 * Acceleration * (float)Math.Pow(timeUsed, 2);
+            float secondRangeEnd = velocity * (timeUsed + GetFrameTime()) + (float) 0.5 * Acceleration * (float) Math.Pow(timeUsed + GetFrameTime(), 2);
+
             timeUsed = timeUsed + GetFrameTime();
+            
             return (secondRangeEnd - firstRangeEnd) / meter; //The meter because in here we convert pixels in meters to make to model more realistic
         }
 
-        public void ChangePosition(double currentDistance, double meter, Player player)
+        public void ChangePosition(Vector2 distanceToTravel, float meter, Player player)
         {
-            currentDistance = currentDistance * meter; // Convert back in pixels
-            player.Position = new Vector2(player.Position.X, player.Position.Y - (float)currentDistance);
+            distanceToTravel.X = distanceToTravel.X * meter;
+            distanceToTravel.Y = distanceToTravel.Y * meter;
+            player.Position = new Vector2(player.Position.X + distanceToTravel.X, player.Position.Y - distanceToTravel.Y);
+
+            if(distanceToTravel.Y == 0)
+            {
+                player.Position = new Vector2(player.Position.X, (float) Math.Round(player.Position.Y));
+            }
+        }
+
+        //---------------------------------------------------------------------------------------------------------------------//
+
+        public Vector2 DistancesCenter(ref float fullDistance, ref Vector2 timeUsed, ref float totalDistanceTravelled, float meter, List<Platform> platforms, Player player, ref bool oneTimeSet, ref bool distanceCalculated, ref bool distanceWas0)
+        {
+            float verticalDistance = GravitationalDistancesCenter(timeUsed.Y, ref fullDistance, ref timeUsed, ref totalDistanceTravelled, meter, platforms, player, ref oneTimeSet, ref distanceCalculated, ref distanceWas0);
+
+            if(verticalDistance == 0)
+            {
+                timeUsed.Y = 0;
+            }
+
+            if (IsKeyDown(Raylib_CsLo.KeyboardKey.KEY_D)) 
+            {
+                player.acceleration.X = (float) 174*2;
+            }
+            else if (IsKeyDown(Raylib_CsLo.KeyboardKey.KEY_A))
+            {
+                player.acceleration.X = (float) -174*2;
+            }
+            else
+            {
+                player.acceleration.X = 0;
+            }
+
+            float horizontalDistance = Distances(player.Acceleration.X, meter, ref timeUsed.X, player.Velocity.X);
+
+            if(horizontalDistance == 0)
+            {
+                timeUsed.X = 0;
+            }
+
+            return new Vector2((float) horizontalDistance, (float) verticalDistance);
         }
     }
 }

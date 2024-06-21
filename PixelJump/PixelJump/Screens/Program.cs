@@ -9,7 +9,7 @@ namespace NEA
     {
         public static async Task Main(string[] args)
         {
-            PixelJump.Player player = new PixelJump.Player(50, new Vector2(200, 200), Raylib.RED, 85, 0);
+            PixelJump.Player player = new PixelJump.Player(new Vector2(50, 50), new Vector2(200, 200), new Vector2(0, 0), new Vector2(0, -245), Raylib.BLUE, 85);
             List<PixelJump.Platform> platforms = new List<PixelJump.Platform>();
             MainGame maingame = new MainGame();
 
