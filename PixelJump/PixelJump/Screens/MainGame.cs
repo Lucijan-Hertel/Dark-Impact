@@ -4,16 +4,13 @@ using static Raylib_CsLo.Raylib;
 using static Raylib_CsLo.RayGui;
 using Raylib_CsLo;
 
-namespace PixelJump.Screens
+namespace PixelJump.Objects
 {
     public class MainGame
     {
-        Player player = new Player(new Vector2(50, 50), new Vector2(200, 200), new Vector2(0, 0), new Vector2(0, -245), BLUE, 85);
-        Platform singlePlatform = new Platform(new Vector2(-50, -50), -50, -50, RED);
-        Random rand = new Random();
-        float fullDistance = 0;
-        float timeTaken = 0;
-        float totalDistanceTravelled = 0;
+        Player player = new Player(new Vector2(50, 50), new Vector2(600, 200), new Vector2(0, 0), new Vector2(0, -500), BLUE, 85);
+        Platform platform = new Platform(new Vector2(-50, -50), new Vector2(-50, -50), RED);
+        Vector2 fullDistance = new Vector2();
         float meter = 25;
         Vector2 timeUsed = new Vector2();
         Vector2 distanceToTravel = new Vector2();
@@ -24,23 +21,19 @@ namespace PixelJump.Screens
         {
             if (!alreadyUsed)
             {
-                singlePlatform.Platforms.Add(new Platform(new Vector2(200, 400), 60, 10, RED));
-                singlePlatform.Platforms.Add(new Platform(new Vector2(600, 300), 60, 10, RED));
+                platform.Platforms.Add(new Platform(new Vector2(200, 700), new Vector2(60, 10), RED));
+                platform.Platforms.Add(new Platform(new Vector2(200, 300), new Vector2(60, 10), RED));
                 alreadyUsed = true;
             }
 
-            distanceToTravel = player.DistancesCenter(ref fullDistance, ref timeUsed, ref totalDistanceTravelled, meter, singlePlatform.Platforms, player, ref oneTimeSet, ref distanceCalculated, ref distanceWas0);
+            distanceToTravel = player.DistancesCenter(ref fullDistance, ref timeUsed, meter, platform.Platforms, player, ref oneTimeSet, ref distanceCalculated, ref distanceWas0);
         }
 
         public void Draw()
         {
             player.ChangePosition(distanceToTravel, meter, player);
-
-            foreach(Platform platform in singlePlatform.Platforms)
-            {
-                platform.DrawPlatform((int) platform.Position.X, (int) platform.Position.Y, platform.Width, platform.Height, platform.Color);
-            }
             player.DrawPlayer((int)player.Position.X, (int)player.Position.Y, (int) player.Size.X, (int) player.Size.Y, player.Color);
+            platform.DrawPlatforms();
         }
     }
 }
