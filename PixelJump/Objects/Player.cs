@@ -53,15 +53,10 @@ namespace PixelJump.Objects
 
         public void MovementCalculation(Platform platform)
         {
-            try
-            {
-                this.acceleration = SettingAcceleration(platform);
-                this.velocity = CalculatingVelocity(initialVelocity, acceleration, platform.Platforms);
-                this.distance = CalculatingDistance(initialVelocity, acceleration, GetFrameTime());
-                this.initialVelocity = SettingInitialVelocity(velocity, platform.Platforms, ref alreadyOnTop);
-            }
-
-            catch (Exception e) { }
+            this.acceleration = SettingAcceleration(platform);
+            this.velocity = CalculatingVelocity(initialVelocity, acceleration, platform.Platforms);
+            this.distance = CalculatingDistance(initialVelocity, acceleration, GetFrameTime());
+            this.initialVelocity = SettingInitialVelocity(velocity, platform.Platforms, ref alreadyOnTop);
 
             UpdatePlayerPosition(platform.Platforms, distance);
             UpdateSpaceVariable();
@@ -148,7 +143,7 @@ namespace PixelJump.Objects
 
         public float CalculatingTimeTillMaximumJumpHeight(Vector2 initialVelocity)
         {
-            return (float) (-2*initialVelocity.Y/(2*(-9.8*18)));
+            return (float) (-initialVelocity.Y/(-9.8*18));
         }
 
         //-Acceleration-//
@@ -186,7 +181,7 @@ namespace PixelJump.Objects
 
             foreach(Platform platform in platforms)
             {
-                if (platform.Position.X -1 <= (int) position.X + size.X && (int) position.X <= platform.Position.X + platform.Size.X + 1 && platform.Position.Y - 1 == (int)position.Y + size.Y)
+                if (platform.Position.X -1 <= Math.Ceiling(position.X) + size.X && Math.Ceiling(position.X) <= platform.Position.X + platform.Size.X + 1 && platform.Position.Y - 1 == Math.Ceiling(position.Y) + size.Y)
                 {
                     Collisions.Add("bottom");
                 }

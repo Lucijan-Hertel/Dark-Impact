@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "1evS8LsX2NgmilayIw0dKpXbk3YuPWHSPmYMQaFgRxyQDRPYgB1Cn9ySH6RE5TDfcn+JeSpznXqjXXBUMEV8qw==",
+  "success": true,
+  "projectFilePath": "/Users/lucijan/Projects/PixelJump/PixelJump/PixelJump.csproj",
+  "expectedPackageFiles": [
+    "/Users/lucijan/.nuget/packages/microsoft.toolkit.highperformance/7.1.2/microsoft.toolkit.highperformance.7.1.2.nupkg.sha512",
+    "/Users/lucijan/.nuget/packages/raylib-cslo/4.2.0.9/raylib-cslo.4.2.0.9.nupkg.sha512"
+  ],
+  "logs": []
+}

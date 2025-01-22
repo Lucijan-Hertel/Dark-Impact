@@ -10,7 +10,7 @@ namespace PixelJump.Screens
     public class MainGame
     {
         //-New Instances-//
-        Player player = new Player(new Vector2(50, 50), new Vector2(200, 1), new Vector2(0, 0), new Vector2(0, 0), new Vector2(0, 0), new Vector2(0, 0), RED);
+        Player player = new Player(new Vector2(50, 50), new Vector2(200, 956), new Vector2(0, 0), new Vector2(0, 0), new Vector2(0, 0), new Vector2(0, 0), RED);
         Platform platform = new Platform(new Vector2(), new Vector2(), RED, 0);
         Area area = new Area(new Vector2(0, 0), new Vector2(0, 0), "", false);
 
@@ -20,17 +20,16 @@ namespace PixelJump.Screens
         {
             if (!alreadyUsed)
             {
-                
-                platform.Platforms.Add(new Platform(new Vector2(0,GetScreenHeight() - 100), new Vector2(GetScreenWidth(), 100), DARKGREEN, 2));
-                platform.Platforms.Add(new Platform(new Vector2(200, 700), new Vector2(300, 25), DARKGREEN, 2));
+                platform.Platforms.Add(new Platform(new Vector2(0, GetScreenHeight() - 100), new Vector2(GetScreenWidth(), 100), DARKGREEN, 2));
+                platform.AllocateAreasForPlatform(platform.Platforms[0], player);
+                //platform.Platforms.Add(new Platform(new Vector2(GetScreenWidth() / 2, GetScreenHeight() - 233), new Vector2(400, 50), BLUE, 2));
+                //platform.AllocateAreasForPlatform(platform.Platforms[1], player);
                 platform.Platforms = platform.sortPlatforms(platform.Platforms);
 
-                foreach (Platform platform in platform.Platforms)
+                for (int i = 0; i < 3; i++)
                 {
-                    platform.AllocateAreasForPlatform(platform, player);
+                    platform.AllocateAreasAndPlacePlatformsForIt(platform, area, player);
                 }
-
-                platform.Platforms.Add(area.CreateNewPlatforms(player, platform.Platforms, platform.Platforms[0].Areas[1]));
 
                 alreadyUsed = true;
             }
@@ -39,6 +38,7 @@ namespace PixelJump.Screens
             {
                 foreach(Area area in platform.Areas)
                 {
+                    if(area.PlatformPlaced)
                     DrawRectangle((int) area.Position.X, (int) area.Position.Y, (int) area.Size.X, (int) area.Size.Y, PURPLE);
                 }
             }

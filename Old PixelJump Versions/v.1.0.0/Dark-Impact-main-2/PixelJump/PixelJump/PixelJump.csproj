@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Raylib-CsLo" Version="4.2.0.9" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="Screens\" />
+    <None Remove="Objects\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Screens\" />
+    <Folder Include="Objects\" />
+  </ItemGroup>
+</Project>

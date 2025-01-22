@@ -7,14 +7,12 @@ using System.Runtime.InteropServices;
 
 namespace PixelJump.Objects
 {
-	public class Area
-	{
-		private Vector2 position;
-		private Vector2 size;
+    public class Area
+    {
+        private Vector2 position;
+        private Vector2 size;
         private string information;
         bool platformPlaced;
-        string positionFromPlatform;
-        bool twoPlatfoms = false;
 
         public Area(Vector2 position, Vector2 size, string information, bool platformPlaced)
         {
@@ -26,95 +24,148 @@ namespace PixelJump.Objects
 
         //--Platform Generation--//
 
-        public Platform CreateNewPlatforms(Player player, List<Platform> platforms, Area area) // Change every Areas[1] to the opposite area side of the original area
+        public Platform CreateNewPlatforms(List<Platform> platforms, Area area, Platform platform) // Change every Areas[1] to the opposite area side of the original area
         {
-            List<Platform> selectedPlatforms = new List<Platform>();
-            List<int> distanceBetweenSelectedAreas = new List<int>();
             Vector2 distanceBetweenAreaAAndAreaB = new Vector2();
-            float smallestDistanceBetweenPlatforms = 1000000000;
-            Platform closestPlatform = platforms[0];
 
 
-            foreach (Platform examplePlatfrom in platforms) // filtering out which areas could be potential pairs
+
+
+            if (CheckForClosestArea(area, platforms).position != new Vector2(0, 0))
             {
-                distanceBetweenAreaAAndAreaB.Y = Math.Abs((int) (area.position.Y - examplePlatfrom.Areas[1].position.Y));
-                distanceBetweenAreaAAndAreaB.X = Math.Abs((int)(area.position.X - examplePlatfrom.Areas[1].position.X));
-                float maximumJumpHeight = player.CalculatingDistance(new Vector2(0, 200), new Vector2(0, (float) -9.8*18), player.CalculatingTimeTillMaximumJumpHeight(new Vector2(0, 200))).Y;
-
-                if ((distanceBetweenAreaAAndAreaB.Y >= -maximumJumpHeight || distanceBetweenAreaAAndAreaB.Y <= maximumJumpHeight) && !CheckIfPlatformsAreInBetweenTwoPlatforms(area, examplePlatfrom.Areas[1], platforms, (int) distanceBetweenAreaAAndAreaB.Y) && examplePlatfrom.Areas[1].position != area.position)
-                {
-                    if (smallestDistanceBetweenPlatforms > distanceBetweenAreaAAndAreaB.X)
-                    {
-                        smallestDistanceBetweenPlatforms = distanceBetweenAreaAAndAreaB.X;
-                    }
-                }
-                else if(CheckIfPlatformsAreInBetweenTwoPlatforms(area, examplePlatfrom.Areas[1], platforms, (int)distanceBetweenAreaAAndAreaB.Y) && examplePlatfrom.Areas[0].position != area.position)
-                {
-                    // Code for Platformgeneration with only one Area here
-
-                    return CreatePlatformWithSingleAreaWhereAreaIsInBetween(area, examplePlatfrom.Platforms);
-                }
-                else
-                {
-                    return CreatePlatformWithSingleArea(area);
-                }
-            }
-
-            return CreatePlatformWithTwoAreas(area, closestPlatform.Areas[1], smallestDistanceBetweenPlatforms);
-        }
-
-        public Platform CreatePlatformWithSingleArea(Area area)
-        {
-            Random rand = new Random();
-            Vector2 position = new Vector2(0, 0);
-            Vector2 size = new Vector2(0, 0);
-
-            position = new Vector2(rand.Next((int)area.position.X, (int)(area.position.X + area.size.X)), rand.Next((int)area.position.Y, (int)(area.position.Y + area.size.Y)));
-            if (area.information.Contains("Spawn Area left"))
-            {
-                size = new Vector2(rand.Next(0, (int) position.X -25), 25);
-            }
-            else if (area.information.Contains("Spawn Area left"))
-            {
-                size = new Vector2(rand.Next((int)position.X + 25, GetScreenWidth()), 25);
-            }
-
-            return new Platform(position, size, GREEN, rand.Next(0, 2));
-        }
-
-        public Platform CreatePlatformWithSingleAreaWhereAreaIsInBetween(Area area, List<Platform> platfoms) // Could be that a platform spawns in another platform
-        {
-            Area protectionArea = new Area(new Vector2(0, 0), new Vector2(0, 0), "", false);
-            Random rand = new Random();
-            Vector2 position = new Vector2();
-            Vector2 size = new Vector2();
-
-            foreach (Platform platform in platfoms)
-            {
-                if (platform.Areas[0].information.Contains("blocking two Areas from linking"))
-                {
-                    protectionArea = platform.Areas[0];
-                    // Remove text searched for above from information
-                }
-            }
-
-            position = new Vector2(rand.Next((int)area.position.X, (int)(area.position.X + area.size.X)), rand.Next((int)area.position.Y, (int)(area.position.Y + area.size.Y)));
-            if (area.position.X < protectionArea.position.X)
-            {
-                size = new Vector2(rand.Next((int) position.X + 25, (int) protectionArea.position.X), 25);
+                Area closestArea = CheckForClosestArea(area, platforms);
+                return CreatePlatformWithTwoAreas(area, closestArea);
             }
             else
             {
-                size = new Vector2(rand.Next((int) (protectionArea.position.X + protectionArea.size.X), (int) position.X), 25);
+                return CreatePlatformWithSingleArea(area, platform, platforms);
             }
 
-            return new Platform(position, size, GREEN, rand.Next(0, 2));
         }
 
-        public Platform CreatePlatformWithTwoAreas(Area leftArea, Area rightArea, float smallestDistanceBetweenPlatforms)
+        public Platform CreatePlatformWithSingleArea(Area area, Platform platform, List<Platform> platforms)
+        {
+            Random rand = new Random();
+            area.platformPlaced = true;
+            Platform temporaryPlatform = new Platform(new Vector2(0, 0), new Vector2(0, 0), RED, 0);
+
+            temporaryPlatform = CreateCoordinatesForPlatform(platform, area);
+
+            for (int i = 1; i < platforms.Count; i++)
+            {
+                do
+                {
+                    temporaryPlatform = CreateCoordinatesForPlatform(platform, area);
+                } while ((platforms[i].Areas[0].position.Y <= temporaryPlatform.Position.Y + temporaryPlatform.Size.Y && platforms[i].Areas[0].position.Y + platforms[i].Areas[0].size.Y >= temporaryPlatform.Position.Y + temporaryPlatform.Size.Y && platforms[i].Areas[0].position.X <= temporaryPlatform.Position.X + temporaryPlatform.Size.X && platforms[i].Areas[0].position.X + platforms[i].Areas[0].size.X >= temporaryPlatform.Position.X + temporaryPlatform.Size.X) || (platforms[i].Areas[0].position.Y <= temporaryPlatform.Position.Y && platforms[i].Areas[0].position.Y + platforms[i].Areas[0].size.Y >= temporaryPlatform.Position.Y && platforms[i].Areas[0].position.X <= temporaryPlatform.Position.X && platforms[i].Areas[0].position.X + platforms[i].Areas[0].size.X >= temporaryPlatform.Position.X));
+            }
+
+            return new Platform(temporaryPlatform.Position, temporaryPlatform.Size, DARKGREEN, rand.Next(1, 2));
+        }
+
+        public Platform CreateCoordinatesForPlatform(Platform platform, Area area)
+        {
+            Random rand = new Random();
+            Vector2 platformPosition = new Vector2(0, 0);
+            Vector2 platformSize = new Vector2(0, 0);
+
+            do
+            {
+                int x = GetScreenWidth();
+                platformPosition = new Vector2(rand.Next((int)(area.position.X + area.size.X - 50), (int)(area.position.X + area.size.X)), rand.Next((int)area.position.Y, (int)(2 * area.position.Y + area.size.Y - platform.Areas[0].position.Y))); // X coordinate changed so that size can not get below 50
+
+                if (area.information.Contains("Spawn Area left") && !CheckIfPlatformsAreInBetweenTwoPlatforms(new Area(new Vector2(0, area.position.Y), new Vector2(0, area.size.Y), "", false), area, platform.Platforms, (int)area.position.X)) // no platforms in platform.Platforms
+                {
+                    platformSize = new Vector2(platformPosition.X, 50);
+                }
+                else if (area.information.Contains("Spawn Area right") && !CheckIfPlatformsAreInBetweenTwoPlatforms(new Area(new Vector2(0, area.position.Y), new Vector2(0, area.size.Y), "", false), area, platform.Platforms, (int)area.position.X)) // no platforms in platform.Platforms)
+                {
+                    platformSize = new Vector2(-rand.Next((int)(0.125 * (platformPosition.X)), (int)(platformPosition.X)), 50);
+                }
+
+            } while (platformPosition.Y + platformSize.Y >= platform.Areas[0].position.Y && (platformPosition.X >= platform.Areas[0].position.X && area.information.Contains("Spawn Area left") || (platformPosition.X <= platform.Areas[0].position.X + platform.Areas[0].size.X && area.information.Contains("Spawn Area right"))));
+
+            if (area.information.Contains("Spawn Area right"))
+            {
+                platformPosition.X = platformPosition.X + platformSize.X;
+                platformSize.X = Math.Abs(platformSize.X);
+            }
+
+            return new Platform(platformPosition, platformSize, DARKGREEN, rand.Next(1, 2));
+
+        }
+
+        public Platform CreatePlatformWithSingleAreaWhereAreaIsInBetween(Area area, List<Platform> platforms) // Could be that a platform spawns in another platform
+        {
+            Area protectionArea = new Area(new Vector2(500, 0), new Vector2(0, 0), "", false);
+            Platform newPlatform = new Platform(new Vector2(0, 0), new Vector2(0, 0), BLUE, 0);
+            area.platformPlaced = true;
+
+            foreach (Platform examplePlatform in platforms)
+            {
+                if (examplePlatform.Areas[0].information.Contains(area.position.ToString()))
+                {
+                    examplePlatform.Areas[0].information = RemoveVectorsFromString(examplePlatform.Areas[0].information, '<', '>');
+                    protectionArea = examplePlatform.Areas[0];
+                }
+            }
+
+            newPlatform = CreateCoordinatesForPlatformWithAreaInBetween(area, protectionArea);
+
+
+            for (int i = 0; i < platforms.Count; i++)
+            {
+                if ((newPlatform.Position.Y >= platforms[i].Areas[0].position.Y && newPlatform.Position.Y <= platforms[i].Areas[0].position.Y + platforms[i].Areas[0].size.Y && newPlatform.Position.X >= platforms[i].Areas[0].position.X && newPlatform.Position.X <= platforms[i].Areas[0].position.X + platforms[i].Areas[0].size.X) || (newPlatform.Position.Y + newPlatform.Size.Y >= platforms[i].Areas[0].position.Y && newPlatform.Position.Y + newPlatform.Size.Y <= platforms[i].Areas[0].position.Y + platforms[i].Areas[0].size.Y && newPlatform.Position.X + newPlatform.Size.X >= platforms[i].Areas[0].position.X && newPlatform.Position.X + newPlatform.Size.X <= platforms[i].Areas[0].position.X + platforms[i].Areas[0].size.X))
+                {
+                    newPlatform = CreateCoordinatesForPlatformWithAreaInBetween(area, protectionArea);
+                    i = 0;
+                }
+            }
+
+            return newPlatform;
+        }
+
+        public string RemoveVectorsFromString(string inputString, char startingCharacter, char endingCharacter)
+        {
+            int positionOfStartingCharacter = 0;
+            int positionOfEndingCharacter = 0;
+
+            while (inputString.Contains(startingCharacter))
+            {
+                positionOfStartingCharacter = inputString.IndexOf(startingCharacter) - 2;
+                positionOfEndingCharacter = inputString.IndexOf(endingCharacter) + 1;
+
+                inputString = inputString.Remove(positionOfStartingCharacter, positionOfEndingCharacter - positionOfStartingCharacter);
+            }
+
+            return inputString;
+        }
+
+        public Platform CreateCoordinatesForPlatformWithAreaInBetween(Area area, Area protectionArea)
+        {
+            Random rand = new Random();
+            Vector2 newPosition = new Vector2();
+            Vector2 newSize = new Vector2();
+
+            newPosition = new Vector2(rand.Next((int)area.position.X, (int)(area.position.X + area.size.X)), rand.Next((int)area.position.Y, (int)(area.position.Y + area.size.Y)));
+            if (newPosition.X <= protectionArea.position.X)
+            {
+                newSize = new Vector2(rand.Next((int) (0.5 * (protectionArea.position.X - newPosition.X)), (int)(protectionArea.position.X - newPosition.X)), 50);
+            }
+            else if(newPosition.X >= protectionArea.position.X + protectionArea.size.X)
+            {
+                newSize = new Vector2(rand.Next(50, (int)(newPosition.X - (protectionArea.position.X + protectionArea.size.X)) + 50), 50);
+                newPosition.X = newPosition.X - newSize.X;
+            }
+
+            return new Platform(newPosition, newSize, GREEN, rand.Next(1, 2));
+        }
+
+        public Platform CreatePlatformWithTwoAreas(Area leftArea, Area rightArea)
         {
             Platform platform;
             Random rand = new Random();
+            leftArea.platformPlaced = true;
+            rightArea.platformPlaced = true;
             Vector2 minimumPosition;
             Vector2 maximumPosition;
             Vector2 position;
@@ -128,7 +179,7 @@ namespace PixelJump.Objects
             }
 
 
-            if(leftArea.position.Y < rightArea.position.X)
+            if(leftArea.position.Y < rightArea.position.Y)
             {
                 minimumPosition.Y = leftArea.position.Y;
                 maximumPosition.Y = rightArea.position.Y + rightArea.size.Y;
@@ -144,24 +195,29 @@ namespace PixelJump.Objects
 
             position.Y = rand.Next((int) minimumPosition.Y, (int) maximumPosition.Y);
             position.X = rand.Next((int) minimumPosition.X, (int) maximumPosition.X);
-            size.Y = 25;
+            size.Y = 50;
             size.X = rand.Next((int)(rightArea.position.X - position.X), (int)(rightArea.position.X + rightArea.size.X - position.X));
 
-            return new Platform(position, size, GREEN, rand.Next(0, 2));
+            leftArea.PlatformPlaced = true;
+            rightArea.PlatformPlaced = true;
+
+            return new Platform(position, size, PINK, rand.Next(1, 2));
         }
 
         public bool CheckIfPlatformsAreInBetweenTwoPlatforms(Area leftArea, Area rightArea, List<Platform> platforms, int distanceBetweenAreaAAndAreaB)
         {
-            Vector2 positionOfArealowerToTheBottom;
-            Random rand = new Random();
+            Area areaLowerToTheBottom;
+            Area areaUpperToTheTop;
 
             if(distanceBetweenAreaAAndAreaB > 0)
             {
-                positionOfArealowerToTheBottom = leftArea.position;
+                areaLowerToTheBottom = leftArea;
+                areaUpperToTheTop = rightArea;
             }
             else
             {
-                positionOfArealowerToTheBottom = rightArea.position;
+                areaLowerToTheBottom = rightArea;
+                areaUpperToTheTop = leftArea;
             }
 
             if (leftArea.position.X > rightArea.position.X)
@@ -173,9 +229,9 @@ namespace PixelJump.Objects
 
             foreach (Platform platform in platforms)
             {
-                if ((leftArea.position.X >= platform.Areas[0].position.X + platform.Areas[0].size.X && rightArea.position.X + rightArea.size.X <= platform.Areas[0].position.X) && (leftArea.position.X + leftArea.size.X >= platform.Areas[0].position.X || rightArea.position.X + rightArea.size.X >= platform.Areas[0].position.X))
+                if (areaLowerToTheBottom.position.Y <= areaUpperToTheTop.position.Y + areaUpperToTheTop.size.Y && leftArea.position.X <= platform.Areas[0].position.X + platform.Areas[0].size.X && rightArea.position.X + rightArea.size.X >= platform.Areas[0].position.X && ((areaLowerToTheBottom.position.Y <= platform.Areas[0].position.Y && areaUpperToTheTop.position.Y + areaUpperToTheTop.size.X >= platform.Areas[0].position.Y) || (areaLowerToTheBottom.position.Y <= platform.Areas[0].position.Y + platform.Areas[0].size.Y && areaUpperToTheTop.position.Y + areaUpperToTheTop.size.X >= platform.Areas[0].position.Y + platform.Areas[0].size.Y)))
                 {
-                    platform.Areas[0].information = platform.Areas[0].information + ", blocking two Areas from linking";
+                    platform.Areas[0].information = platform.Areas[0].information + ", " + leftArea.position + ", " + rightArea.position;
                     return true;
                 }
             }
@@ -222,11 +278,11 @@ namespace PixelJump.Objects
             rightQuatile = QuickSortAreas(rightQuatile);
             leftQuatile = QuickSortAreas(leftQuatile);
 
-            return quickSortedList = mergeSortDistances(leftQuatile, rightQuatile);
+            return quickSortedList = MergeSortDistances(leftQuatile, rightQuatile);
 
         }
 
-        public List<int> mergeSortDistances(List<int> leftSide, List<int> rightSide)
+        public List<int> MergeSortDistances(List<int> leftSide, List<int> rightSide)
         {
             List<int> mergedList = new List<int>();
 
@@ -260,6 +316,34 @@ namespace PixelJump.Objects
             }
 
             return mergedList;
+        }
+
+        public Area CheckForClosestArea(Area area, List<Platform> platforms)
+        {
+            float distanceBetweenAreas = 0;
+            Area closestArea = new Area(new Vector2(0, 0), new Vector2(0, 0), "", false);
+
+            foreach(Platform platform in platforms)
+            {
+                foreach(Area exampleArea in platform.Areas)
+                {
+                    int x = (int)exampleArea.position.X;
+                    int xx = (int)(area.position.X + platform.Size.X - exampleArea.size.X);
+
+                    if (area.information.Contains("Spawn Area left") && exampleArea.Information.Contains("Spawn Area right") && (int) exampleArea.position.X != (int) (area.position.X + area.size.X + platform.Size.X) && exampleArea.position != platforms[0].Areas[2].Position && (area.position.Y <= exampleArea.position.Y && area.position.Y + area.size.Y >= exampleArea.position.Y || exampleArea.position.Y <= area.position.Y && exampleArea.position.Y + exampleArea.size.Y >= area.position.Y) && area.position.X - exampleArea.Position.X < distanceBetweenAreas)
+                    {
+                        distanceBetweenAreas = area.position.X - exampleArea.Position.X;
+                        closestArea = exampleArea;
+                    }
+                    else if(area.information.Contains("Spawn Area right") && exampleArea.Information.Contains("Spawn Area left") && (int) area.position.X != (int) (exampleArea.position.X + exampleArea.size.X + platform.Size.X) && exampleArea.position != platforms[0].Areas[1].Position && (area.position.Y <= exampleArea.position.Y && area.position.Y + area.size.Y >= exampleArea.position.Y || exampleArea.position.Y <= area.position.Y && exampleArea.position.Y + exampleArea.size.Y >= area.position.Y) && exampleArea.Position.X - area.position.X < distanceBetweenAreas)
+                    {
+                        distanceBetweenAreas = exampleArea.position.X - area.Position.X;
+                        closestArea = exampleArea;
+                    }
+                }
+            }
+
+            return closestArea;
         }
 
         public Vector2 Position { get => position; set => position = value; }
