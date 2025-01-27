@@ -123,7 +123,7 @@ namespace PixelJump
                 {
                     if (!exampleArea.PlatformPlaced && !exampleArea.Information.Contains("Spawn protection"))
                     {
-                        platform.Platforms.Add(area.CreateNewPlatforms(platform.platforms, exampleArea, platform.platforms[i]));
+                        platform.Platforms.Add(area.CreateNewPlatforms(platform.platforms, exampleArea, platform.platforms[i], player));
                         AllocateAreasForPlatform(platforms[platform.platforms.Count - 1], player);
                     }
                 }
@@ -134,13 +134,24 @@ namespace PixelJump
         {
             float time = 0;
             Vector2 distance;
+            Random rand = new Random();
 
             if (platform.size.X < GetScreenWidth() && platform.areas.Count == 0) // Spawn protection area
             {
                 platform.Areas.Add(new Area(new Vector2(platform.position.X - (int)(1.5 * player.Size.X), platform.Position.Y - (int)(1.5 * player.Size.Y)), new Vector2(platform.size.X + (int) (3 * player.Size.X), platform.Size.Y + (int) (3 * player.Size.Y)), "Spawn protection", false));
             }
 
-            if(platform.numberOfAreas == 2 && platform.areas.Count < 3 && platform.size.X != GetScreenWidth())
+            if (platform.numberOfAreas == 2 && platform.areas.Count < 2 && platform.size.X != GetScreenWidth() && GetScreenWidth() - (platform.position.X + platform.size.X) <= 150)
+            {
+                AllocateAreaOnPlatformLeft(player, platform);
+                platform.numberOfAreas = 1;
+            }
+            else if((platform.numberOfAreas == 2 && platform.areas.Count < 2 && platform.size.X != GetScreenWidth()) || platform.position.X <= 150)
+            {
+                AllocateAreaOnPlatformRight(player, platform);
+                platform.numberOfAreas = 1;
+            }
+            else if (platform.numberOfAreas == 3 && platform.areas.Count < 3 && platform.size.X != GetScreenWidth())
             {
                 AllocateAreaOnPlatformLeft(player, platform);
                 AllocateAreaOnPlatformRight(player, platform);
@@ -158,7 +169,16 @@ namespace PixelJump
                 distance = player.CalculatingDistance(new Vector2(150, 200), new Vector2(0, (float)-9.8 * 18), time);
                 platform.Areas.Add(new Area(new Vector2(0, platform.position.Y - (int) (player.Size.Y * 1.5)), new Vector2(GetScreenWidth(), distance.Y), "Spawn protection", false)); // Spawn protection area
                 platform.Areas.Add(new Area(new Vector2(0, platform.Position.Y - distance.Y - player.Size.Y), new Vector2(distance.X, distance.Y), "Spawn Area left", false)); // Spawn area left
-                platform.Areas.Add(new Area(new Vector2(platform.size.X - distance.X, platform.Position.Y - distance.Y - player.Size.Y), new Vector2(distance.X, distance.Y), "Spawn Area right", false)); // Spawn area right
+                platform.Areas.Add(new Area(new Vector2(platform.size.X - distance.X, platform.Position.Y - distance.Y - player.Size.Y), new Vector2(distance.X, distance.Y), "Spawn Area left", false)); // Spawn area right
+            }
+
+            if (platform.Areas[0].Position.X < 0)
+            {
+                platform.Areas[0].Position = new Vector2(0, platform.Areas[0].Position.Y);
+            }
+            else if (platform.Areas[0].Position.X > GetScreenWidth())
+            {
+                platform.Areas[0].Position = new Vector2(GetScreenWidth(), platform.Areas[0].Position.Y);
             }
         }
 
@@ -203,16 +223,14 @@ namespace PixelJump
             int leftOrRight = 0;
             if((platform.position.X != 0) && (platform.position.X + platform.size.X) != GetScreenWidth())
             {
-                leftOrRight = rand.Next(1, 2);
+                leftOrRight = rand.Next(1, 3);
             }
 
-            int x = GetScreenWidth();
-
-            if(leftOrRight == 1 || platform.position.X + platform.size.X == GetScreenWidth())
+            if(leftOrRight == 1 || platform.position.X + platform.size.X == GetScreenWidth() || (leftOrRight == 2 && GetScreenWidth() - (platform.position.X + platform.size.X) < 150))
             {
                 AllocateAreaOnPlatformLeft(player, platform);
             }
-            else if(leftOrRight == 2 || platform.position.X == 0)
+            else if(leftOrRight == 2 || platform.position.X == 0 || platform.position.X < 150)
             {
                 AllocateAreaOnPlatformRight(player, platform);
             }

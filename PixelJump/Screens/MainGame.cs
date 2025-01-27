@@ -22,11 +22,9 @@ namespace PixelJump.Screens
             {
                 platform.Platforms.Add(new Platform(new Vector2(0, GetScreenHeight() - 100), new Vector2(GetScreenWidth(), 100), DARKGREEN, 2));
                 platform.AllocateAreasForPlatform(platform.Platforms[0], player);
-                //platform.Platforms.Add(new Platform(new Vector2(GetScreenWidth() / 2, GetScreenHeight() - 233), new Vector2(400, 50), BLUE, 2));
-                //platform.AllocateAreasForPlatform(platform.Platforms[1], player);
                 platform.Platforms = platform.sortPlatforms(platform.Platforms);
 
-                for (int i = 0; i < 3; i++)
+                for (int i = 0; i < 10; i++)
                 {
                     platform.AllocateAreasAndPlacePlatformsForIt(platform, area, player);
                 }
@@ -34,12 +32,12 @@ namespace PixelJump.Screens
                 alreadyUsed = true;
             }
 
-            foreach (Platform platform in platform.Platforms)
+            for (int i = 0; i < platform.Platforms.Count; i++)
             {
-                foreach(Area area in platform.Areas)
+                foreach(Area area in platform.Platforms[i].Areas)
                 {
-                    if(area.PlatformPlaced)
-                    DrawRectangle((int) area.Position.X, (int) area.Position.Y, (int) area.Size.X, (int) area.Size.Y, PURPLE);
+                    if(!area.Information.Contains("Spawn protection"))
+                    DrawRectangle((int) area.Position.X, (int) area.Position.Y, (int) area.Size.X, (int) area.Size.Y, BLACK);
                 }
             }
 

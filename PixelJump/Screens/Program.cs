@@ -12,7 +12,6 @@ namespace PixelJump.Objects
             MainGame maingame = new MainGame();
 
             InitWindow(GetScreenWidth(), GetScreenHeight(), "PixelJump");
-            //ToggleFullscreen();
             SetTargetFPS(1600);
             while (!WindowShouldClose()) 
             {

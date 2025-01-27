@@ -83,7 +83,7 @@ namespace PixelJump.Objects
             Vector2 distance;
 
             distance.Y = initialVelocity.Y * time + (float) 0.5 * acceleration.Y * (float) Math.Pow(time, 2);
-            distance.X = initialVelocity.X * time + (float) 0.5 * acceleration.X * (float) Math.Pow(time, 2);
+            distance.X = initialVelocity.X * time;
 
             return distance;
         }
@@ -91,6 +91,8 @@ namespace PixelJump.Objects
         public Vector2 CalculatingVelocity(Vector2 initialVelocity, Vector2 acceleration, List<Platform> platforms)
         {
             Vector2 velocity;
+
+            //-Vertical-//
 
             if(acceleration.Y != 0)
             {
@@ -100,6 +102,8 @@ namespace PixelJump.Objects
             {
                 velocity.Y = 0;
             }
+
+            //-Horizontal-//
 
             if (IsKeyDown(Raylib_CsLo.KeyboardKey.KEY_A) && !CheckIfPlayerCollidesWithObject(platforms).Contains("left"))
             {
@@ -181,23 +185,35 @@ namespace PixelJump.Objects
 
             foreach(Platform platform in platforms)
             {
-                if (platform.Position.X -1 <= Math.Ceiling(position.X) + size.X && Math.Ceiling(position.X) <= platform.Position.X + platform.Size.X + 1 && platform.Position.Y - 1 == Math.Ceiling(position.Y) + size.Y)
+                if (platform.Position.X -1 <= Math.Ceiling(position.X) + size.X
+                    && Math.Ceiling(position.X) <= platform.Position.X + platform.Size.X + 1
+                    && platform.Position.Y - 1 == Math.Ceiling(position.Y) + size.Y)
                 {
                     Collisions.Add("bottom");
                 }
-                if((int) position.Y == platform.Position.Y && ((int) position.X + size.X == platform.Position.X -1 || (int) position.X == platform.Position.X + platform.Size.X + 1))
+                if((int) position.Y == platform.Position.Y
+                    && ((int) position.X + size.X == platform.Position.X -1
+                    || (int) position.X == platform.Position.X + platform.Size.X + 1))
                 {
                     Collisions.Add("bottom");
                 }
-                if (((int)Position.X + size.X == platform.Position.X - 1 && (int) position.Y <= platform.Position.Y + platform.Size.Y && (int) position.Y + size.Y > platform.Position.Y - 1 ) || (int) position.X + size.X == GetScreenWidth() -1)
+                if (((int)Position.X + size.X == platform.Position.X - 1
+                    && (int) position.Y <= platform.Position.Y + platform.Size.Y
+                    && (int) position.Y + size.Y > platform.Position.Y - 1 )
+                    || (int) position.X + size.X == GetScreenWidth() -1)
                 {
                     Collisions.Add("right");
                 }
-                if (((int)Position.X == platform.Position.X + platform.Size.X + 1 && (int) position.Y <= platform.Position.Y + platform.Size.Y && (int) position.Y + size.Y > platform.Position.Y - 1) || (int) position.X == 1)
+                if (((int)Position.X == platform.Position.X + platform.Size.X + 1
+                    && (int) position.Y <= platform.Position.Y + platform.Size.Y
+                    && (int) position.Y + size.Y > platform.Position.Y - 1)
+                    || (int) position.X == 1)
                 {
                     Collisions.Add("left");
                 }
-                if (platform.Position.X - 1 <= (int) position.X + size.X && (int) position.X <= platform.Position.X + platform.Size.X + 1 && platform.Position.Y + platform.Size.Y + 1 == (int) position.Y)
+                if (platform.Position.X - 1 <= (int) position.X + size.X
+                    && (int) position.X <= platform.Position.X + platform.Size.X + 1
+                    && platform.Position.Y + platform.Size.Y + 1 == (int) position.Y)
                 {
                     Collisions.Add("top");
                 }
@@ -205,10 +221,6 @@ namespace PixelJump.Objects
 
             return Collisions;
         }
-
-        //--Level-Generation--//
-
-
 
         //-Health System and Fall damage-//
 

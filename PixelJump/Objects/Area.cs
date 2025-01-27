@@ -24,20 +24,19 @@ namespace PixelJump.Objects
 
         //--Platform Generation--//
 
-        public Platform CreateNewPlatforms(List<Platform> platforms, Area area, Platform platform) // Change every Areas[1] to the opposite area side of the original area
+        public Platform CreateNewPlatforms(List<Platform> platforms, Area area, Platform platform, Player player) // Change every Areas[1] to the opposite area side of the original area
         {
-            Vector2 distanceBetweenAreaAAndAreaB = new Vector2();
+            Platform closestPlatform = platforms[0];
 
-
-
-
-            if (CheckForClosestArea(area, platforms).position != new Vector2(0, 0))
+            if (CheckForClosestArea(area, ref closestPlatform, platforms).position != new Vector2(0, 0))
             {
-                Area closestArea = CheckForClosestArea(area, platforms);
-                return CreatePlatformWithTwoAreas(area, closestArea);
+                Area closestArea = CheckForClosestArea(area, ref closestPlatform, platforms);
+                area.platformPlaced = true;
+                return CreatePlatformWithTwoAreas(area, platform, closestArea, closestPlatform, player);
             }
             else
             {
+                area.platformPlaced = true;
                 return CreatePlatformWithSingleArea(area, platform, platforms);
             }
 
@@ -47,19 +46,25 @@ namespace PixelJump.Objects
         {
             Random rand = new Random();
             area.platformPlaced = true;
-            Platform temporaryPlatform = new Platform(new Vector2(0, 0), new Vector2(0, 0), RED, 0);
+            Platform temporaryPlatform = CreateCoordinatesForPlatform(platform, area);
 
-            temporaryPlatform = CreateCoordinatesForPlatform(platform, area);
-
-            for (int i = 1; i < platforms.Count; i++)
+            for (int i = 0; i < platforms.Count; i++)
             {
-                do
+                while ((platforms[i].Areas[0].position.Y <= temporaryPlatform.Position.Y + temporaryPlatform.Size.Y
+                        && platforms[i].Areas[0].position.Y + platforms[i].Areas[0].size.Y >= temporaryPlatform.Position.Y + temporaryPlatform.Size.Y
+                        && platforms[i].Areas[0].position.X <= temporaryPlatform.Position.X + temporaryPlatform.Size.X
+                        && platforms[i].Areas[0].position.X + platforms[i].Areas[0].size.X >= temporaryPlatform.Position.X + temporaryPlatform.Size.X)
+                    || (platforms[i].Areas[0].position.Y <= temporaryPlatform.Position.Y
+                        && platforms[i].Areas[0].position.Y + platforms[i].Areas[0].size.Y >= temporaryPlatform.Position.Y
+                        && platforms[i].Areas[0].position.X <= temporaryPlatform.Position.X
+                        && platforms[i].Areas[0].position.X + platforms[i].Areas[0].size.X >= temporaryPlatform.Position.X))
                 {
                     temporaryPlatform = CreateCoordinatesForPlatform(platform, area);
-                } while ((platforms[i].Areas[0].position.Y <= temporaryPlatform.Position.Y + temporaryPlatform.Size.Y && platforms[i].Areas[0].position.Y + platforms[i].Areas[0].size.Y >= temporaryPlatform.Position.Y + temporaryPlatform.Size.Y && platforms[i].Areas[0].position.X <= temporaryPlatform.Position.X + temporaryPlatform.Size.X && platforms[i].Areas[0].position.X + platforms[i].Areas[0].size.X >= temporaryPlatform.Position.X + temporaryPlatform.Size.X) || (platforms[i].Areas[0].position.Y <= temporaryPlatform.Position.Y && platforms[i].Areas[0].position.Y + platforms[i].Areas[0].size.Y >= temporaryPlatform.Position.Y && platforms[i].Areas[0].position.X <= temporaryPlatform.Position.X && platforms[i].Areas[0].position.X + platforms[i].Areas[0].size.X >= temporaryPlatform.Position.X));
+                    i = 0;
+                }  //Defenetly not an error in this for loop
             }
 
-            return new Platform(temporaryPlatform.Position, temporaryPlatform.Size, DARKGREEN, rand.Next(1, 2));
+            return new Platform(temporaryPlatform.Position, temporaryPlatform.Size, DARKGREEN, rand.Next(1, 3)); //Maybe Platform generation wrong because of rand.Next(1, 3) in multiple cases
         }
 
         public Platform CreateCoordinatesForPlatform(Platform platform, Area area)
@@ -71,57 +76,40 @@ namespace PixelJump.Objects
             do
             {
                 int x = GetScreenWidth();
-                platformPosition = new Vector2(rand.Next((int)(area.position.X + area.size.X - 50), (int)(area.position.X + area.size.X)), rand.Next((int)area.position.Y, (int)(2 * area.position.Y + area.size.Y - platform.Areas[0].position.Y))); // X coordinate changed so that size can not get below 50
+                platformPosition = new Vector2(rand.Next((int) area.position.X + 50, (int)(area.position.X + area.size.X)), rand.Next((int)area.position.Y, (int)(area.position.Y + area.size.Y))); // X coordinate changed so that size can not get below 50
 
-                if (area.information.Contains("Spawn Area left") && !CheckIfPlatformsAreInBetweenTwoPlatforms(new Area(new Vector2(0, area.position.Y), new Vector2(0, area.size.Y), "", false), area, platform.Platforms, (int)area.position.X)) // no platforms in platform.Platforms
+                if (area.information.Contains("Spawn Area left") && area.position.X <= GetScreenWidth() / 2) // no platforms in platform.Platforms
                 {
-                    platformSize = new Vector2(platformPosition.X, 50);
+                    platformSize = new Vector2(-platformPosition.X, 50);
                 }
-                else if (area.information.Contains("Spawn Area right") && !CheckIfPlatformsAreInBetweenTwoPlatforms(new Area(new Vector2(0, area.position.Y), new Vector2(0, area.size.Y), "", false), area, platform.Platforms, (int)area.position.X)) // no platforms in platform.Platforms)
+                else if (area.information.Contains("Spawn Area left")) // no platforms in platform.Platforms
                 {
-                    platformSize = new Vector2(-rand.Next((int)(0.125 * (platformPosition.X)), (int)(platformPosition.X)), 50);
+                    platformSize = new Vector2(-platformPosition.X / 2, 50);
+                }
+                else if (area.information.Contains("Spawn Area right") && area.position.X <= GetScreenWidth() /2) // no platforms in platform.Platforms)
+                {
+                    platformSize = new Vector2(rand.Next((int)(0.125 * (GetScreenWidth() - platformPosition.X)), (int) (0.5 *(GetScreenWidth() - platformPosition.X))), 50);
+                }
+                else if(area.information.Contains("Spawn Area right"))
+                {
+                    platformSize = new Vector2(rand.Next((int)(0.5 * (GetScreenWidth() - platformPosition.X)), (int)(GetScreenWidth() - platformPosition.X)), 50);
                 }
 
-            } while (platformPosition.Y + platformSize.Y >= platform.Areas[0].position.Y && (platformPosition.X >= platform.Areas[0].position.X && area.information.Contains("Spawn Area left") || (platformPosition.X <= platform.Areas[0].position.X + platform.Areas[0].size.X && area.information.Contains("Spawn Area right"))));
+            } while (platformPosition.Y + size.Y >= platform.Areas[0].position.Y // + size.X
+                && (platformPosition.X + platformSize.X >= platform.Areas[0].position.X
+                    && area.information.Contains("Spawn Area left")
+                || (platformPosition.X <= platform.Areas[0].position.X + platform.Areas[0].size.X
+                    && area.information.Contains("Spawn Area right"))));
 
-            if (area.information.Contains("Spawn Area right"))
+
+            if (area.information.Contains("Spawn Area left"))
             {
                 platformPosition.X = platformPosition.X + platformSize.X;
                 platformSize.X = Math.Abs(platformSize.X);
             }
 
-            return new Platform(platformPosition, platformSize, DARKGREEN, rand.Next(1, 2));
+            return new Platform(platformPosition, platformSize, DARKGREEN, rand.Next(1, 3));
 
-        }
-
-        public Platform CreatePlatformWithSingleAreaWhereAreaIsInBetween(Area area, List<Platform> platforms) // Could be that a platform spawns in another platform
-        {
-            Area protectionArea = new Area(new Vector2(500, 0), new Vector2(0, 0), "", false);
-            Platform newPlatform = new Platform(new Vector2(0, 0), new Vector2(0, 0), BLUE, 0);
-            area.platformPlaced = true;
-
-            foreach (Platform examplePlatform in platforms)
-            {
-                if (examplePlatform.Areas[0].information.Contains(area.position.ToString()))
-                {
-                    examplePlatform.Areas[0].information = RemoveVectorsFromString(examplePlatform.Areas[0].information, '<', '>');
-                    protectionArea = examplePlatform.Areas[0];
-                }
-            }
-
-            newPlatform = CreateCoordinatesForPlatformWithAreaInBetween(area, protectionArea);
-
-
-            for (int i = 0; i < platforms.Count; i++)
-            {
-                if ((newPlatform.Position.Y >= platforms[i].Areas[0].position.Y && newPlatform.Position.Y <= platforms[i].Areas[0].position.Y + platforms[i].Areas[0].size.Y && newPlatform.Position.X >= platforms[i].Areas[0].position.X && newPlatform.Position.X <= platforms[i].Areas[0].position.X + platforms[i].Areas[0].size.X) || (newPlatform.Position.Y + newPlatform.Size.Y >= platforms[i].Areas[0].position.Y && newPlatform.Position.Y + newPlatform.Size.Y <= platforms[i].Areas[0].position.Y + platforms[i].Areas[0].size.Y && newPlatform.Position.X + newPlatform.Size.X >= platforms[i].Areas[0].position.X && newPlatform.Position.X + newPlatform.Size.X <= platforms[i].Areas[0].position.X + platforms[i].Areas[0].size.X))
-                {
-                    newPlatform = CreateCoordinatesForPlatformWithAreaInBetween(area, protectionArea);
-                    i = 0;
-                }
-            }
-
-            return newPlatform;
         }
 
         public string RemoveVectorsFromString(string inputString, char startingCharacter, char endingCharacter)
@@ -140,27 +128,7 @@ namespace PixelJump.Objects
             return inputString;
         }
 
-        public Platform CreateCoordinatesForPlatformWithAreaInBetween(Area area, Area protectionArea)
-        {
-            Random rand = new Random();
-            Vector2 newPosition = new Vector2();
-            Vector2 newSize = new Vector2();
-
-            newPosition = new Vector2(rand.Next((int)area.position.X, (int)(area.position.X + area.size.X)), rand.Next((int)area.position.Y, (int)(area.position.Y + area.size.Y)));
-            if (newPosition.X <= protectionArea.position.X)
-            {
-                newSize = new Vector2(rand.Next((int) (0.5 * (protectionArea.position.X - newPosition.X)), (int)(protectionArea.position.X - newPosition.X)), 50);
-            }
-            else if(newPosition.X >= protectionArea.position.X + protectionArea.size.X)
-            {
-                newSize = new Vector2(rand.Next(50, (int)(newPosition.X - (protectionArea.position.X + protectionArea.size.X)) + 50), 50);
-                newPosition.X = newPosition.X - newSize.X;
-            }
-
-            return new Platform(newPosition, newSize, GREEN, rand.Next(1, 2));
-        }
-
-        public Platform CreatePlatformWithTwoAreas(Area leftArea, Area rightArea)
+        public Platform CreatePlatformWithTwoAreas(Area leftArea, Platform leftPlatform, Area rightArea, Platform rightPlatform, Player player)
         {
             Platform platform;
             Random rand = new Random();
@@ -174,8 +142,11 @@ namespace PixelJump.Objects
             if(leftArea.position.X > rightArea.position.X)
             {
                 Area temporaryArea = rightArea;
+                Platform temporaryPlatform = rightPlatform;
                 rightArea = leftArea;
                 leftArea = temporaryArea;
+                rightPlatform = leftPlatform;
+                leftPlatform = temporaryPlatform;
             }
 
 
@@ -193,15 +164,21 @@ namespace PixelJump.Objects
             minimumPosition.X = leftArea.position.X;
             maximumPosition.X = leftArea.position.X + leftArea.size.Y;
 
-            position.Y = rand.Next((int) minimumPosition.Y, (int) maximumPosition.Y);
-            position.X = rand.Next((int) minimumPosition.X, (int) maximumPosition.X);
-            size.Y = 50;
-            size.X = rand.Next((int)(rightArea.position.X - position.X), (int)(rightArea.position.X + rightArea.size.X - position.X));
+            do
+            {
+                position.Y = rand.Next((int)minimumPosition.Y, (int)maximumPosition.Y);
+                position.X = rand.Next((int)minimumPosition.X, (int)maximumPosition.X);
+                size.Y = 50;
+                size.X = rand.Next((int)(rightArea.position.X - position.X), (int)(rightArea.position.X + rightArea.size.X - position.X));
+            } while (position.Y < leftPlatform.Areas[0].Position.Y
+                    && position.Y < rightPlatform.Areas[0].Position.Y
+                    && position.X > leftPlatform.Areas[0].position.X + leftPlatform.Areas[0].size.X
+                    && position.X + size.X < rightPlatform.Areas[0].position.X);
 
             leftArea.PlatformPlaced = true;
             rightArea.PlatformPlaced = true;
 
-            return new Platform(position, size, PINK, rand.Next(1, 2));
+            return new Platform(position, size, PINK, rand.Next(1, 3));
         }
 
         public bool CheckIfPlatformsAreInBetweenTwoPlatforms(Area leftArea, Area rightArea, List<Platform> platforms, int distanceBetweenAreaAAndAreaB)
@@ -318,7 +295,7 @@ namespace PixelJump.Objects
             return mergedList;
         }
 
-        public Area CheckForClosestArea(Area area, List<Platform> platforms)
+        public Area CheckForClosestArea(Area area, ref Platform closestPlatform,  List<Platform> platforms)
         {
             float distanceBetweenAreas = 0;
             Area closestArea = new Area(new Vector2(0, 0), new Vector2(0, 0), "", false);
@@ -327,19 +304,34 @@ namespace PixelJump.Objects
             {
                 foreach(Area exampleArea in platform.Areas)
                 {
-                    int x = (int)exampleArea.position.X;
-                    int xx = (int)(area.position.X + platform.Size.X - exampleArea.size.X);
+                    Vector2 x = new Vector2((int) (exampleArea.position.X + exampleArea.size.X), (int) (exampleArea.position.Y + exampleArea.size.Y));
+                    Vector2 xx = new Vector2((int) (area.position.X + area.size.X), (int) (area.position.Y + area.size.Y));
 
-                    if (area.information.Contains("Spawn Area left") && exampleArea.Information.Contains("Spawn Area right") && (int) exampleArea.position.X != (int) (area.position.X + area.size.X + platform.Size.X) && exampleArea.position != platforms[0].Areas[2].Position && (area.position.Y <= exampleArea.position.Y && area.position.Y + area.size.Y >= exampleArea.position.Y || exampleArea.position.Y <= area.position.Y && exampleArea.position.Y + exampleArea.size.Y >= area.position.Y) && area.position.X - exampleArea.Position.X < distanceBetweenAreas)
+                    if (area.information.Contains("Spawn Area left")
+                        && exampleArea.Information.Contains("Spawn Area right") && !exampleArea.platformPlaced
+                        && (int) exampleArea.position.X != (int) (area.position.X + area.size.X + platform.Size.X)
+                        && (area.position.Y <= exampleArea.position.Y && area.position.Y + area.size.Y >= exampleArea.position.Y
+                            || exampleArea.position.Y <= area.position.Y && exampleArea.position.Y + exampleArea.size.Y >= area.position.Y)
+                        && area.position.X - exampleArea.Position.X < distanceBetweenAreas)
                     {
                         distanceBetweenAreas = area.position.X - exampleArea.Position.X;
                         closestArea = exampleArea;
-                    }
-                    else if(area.information.Contains("Spawn Area right") && exampleArea.Information.Contains("Spawn Area left") && (int) area.position.X != (int) (exampleArea.position.X + exampleArea.size.X + platform.Size.X) && exampleArea.position != platforms[0].Areas[1].Position && (area.position.Y <= exampleArea.position.Y && area.position.Y + area.size.Y >= exampleArea.position.Y || exampleArea.position.Y <= area.position.Y && exampleArea.position.Y + exampleArea.size.Y >= area.position.Y) && exampleArea.Position.X - area.position.X < distanceBetweenAreas)
+                        closestPlatform = platform;
+                    } // here
+                    else if(area.information.Contains("Spawn Area right")
+                        && exampleArea.Information.Contains("Spawn Area left") && !exampleArea.platformPlaced
+                        && (int) area.position.X != (int) (exampleArea.position.X + exampleArea.size.X + platform.Size.X)
+                        && exampleArea.position != platforms[0].Areas[1].Position
+                        && (area.position.Y <= exampleArea.position.Y
+                        && area.position.Y + area.size.Y >= exampleArea.position.Y
+                            || exampleArea.position.Y <= area.position.Y
+                        && exampleArea.position.Y + exampleArea.size.Y >= area.position.Y)
+                        && area.position.X - exampleArea.Position.X <= distanceBetweenAreas)
                     {
                         distanceBetweenAreas = exampleArea.position.X - area.Position.X;
                         closestArea = exampleArea;
-                    }
+                        closestPlatform = platform;
+                    } // here
                 }
             }
 
@@ -353,6 +345,11 @@ namespace PixelJump.Objects
     }
 }
 
+/* 
 
-// ln. 27
+-> 
+
+ */
+
+// «.»
 
