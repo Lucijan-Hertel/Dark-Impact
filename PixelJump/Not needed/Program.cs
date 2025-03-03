@@ -7,9 +7,10 @@ namespace PixelJump.Objects
 {
     public static class Program
     {
-        public static async Task Main(string[] args)
+        public static async Task Main(string[] await /*args*/)
         {
-            MainGame maingame = new MainGame();
+            Screen gameScreen = new GameScreen();
+            Screen startScreen = new StartScreen();
 
             InitWindow(GetScreenWidth(), GetScreenHeight(), "PixelJump");
             SetTargetFPS(1600);
@@ -19,8 +20,8 @@ namespace PixelJump.Objects
                 ClearBackground(SKYBLUE);
                 DrawFPS(10, 10);
 
-                maingame.Update();
-                maingame.Draw();
+                startScreen.Update();
+                startScreen.Draw();
 
                 EndDrawing();
             }

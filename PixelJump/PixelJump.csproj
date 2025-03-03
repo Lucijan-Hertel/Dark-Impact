@@ -14,11 +14,15 @@
     <None Remove="Screens\" />
     <None Remove="Objects\" />
     <None Remove="Not needed\" />
+    <None Remove="Platform\" />
+    <None Remove="InterfaceObjects\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Screens\" />
     <Folder Include="Objects\" />
     <Folder Include="Not needed\" />
+    <Folder Include="Platform\" />
+    <Folder Include="InterfaceObjects\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="..\..\..\..\Users\lucijan\.nuget\packages\raylib-cslo\4.2.0.9\contentFiles\any\netstandard2.1\raylib.dll" Condition="Exists('$(NuGetPackageRoot)raylib-cslo/4.2.0.9/contentFiles/any/netstandard2.1/raylib.dll')">

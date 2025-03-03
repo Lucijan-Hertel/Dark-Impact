@@ -4,6 +4,7 @@ using System.Numerics;
 using static Raylib_CsLo.Raylib;
 using static Raylib_CsLo.RayGui;
 using System.Runtime.InteropServices;
+using System.Diagnostics;
 
 namespace PixelJump
 {
@@ -12,32 +13,37 @@ namespace PixelJump
         Vector2 position;
         Vector2 size;
         Raylib_CsLo.Color color;
-        List<Platform> platforms = new List<Platform>();
         List<Area> areas = new List<Area>();
         int numberOfAreas = 0;
+        string information;
 
-        public Platform(Vector2 position, Vector2 size, Raylib_CsLo.Color color, int numberOfAreas) //Generates a new platform object everytime called
+        public Platform(Vector2 position, Vector2 size, Raylib_CsLo.Color color, int numberOfAreas, string information) //Generates a new platform object everytime called
         {
             this.position = position;
             this.size = size;
             this.color = color;
             this.numberOfAreas = numberOfAreas;
+            this.information = information;
         }
 
         public int NumberOfAreas { get => numberOfAreas; set => numberOfAreas = value; }
         public Raylib_CsLo.Color Color { get => color; set => color = value; }
         public Vector2 Position { get => position; set => position = value; }
-        public List<Platform> Platforms { get => platforms; set => platforms = value; }
         public Vector2 Size { get => size; set => size = value; }
         public List<Area> Areas { get => areas; set => areas = value; }
+        public string Information { get => information; set => information = value; }
 
-        public void DrawPlatforms() //Draws platform when called => Easier to identify in code when platform is drawn && easier to search for
+        //---Drawing Platforms---//
+
+        public void DrawPlatforms(List<Platform> platforms) //Draws platform when called => Easier to identify in code when platform is drawn && easier to search for
         {
             foreach (Platform platform in platforms)
             {
                 DrawRectangle((int) platform.position.X, (int) platform.position.Y, (int) platform.size.X, (int) platform.size.Y, platform.color);
             }
         }
+
+        //---Sorting Platforms---//
 
         public List<Platform> sortPlatforms(List<Platform> platforms)
         {
@@ -111,29 +117,31 @@ namespace PixelJump
             return mergedList;
         }
 
-        //--Level-Generation--//
+        //---Level Generation---//
 
-        public void AllocateAreasAndPlacePlatformsForIt(Platform platform, Area area, Player player)
+        //-Area Allocation-//
+
+        public void AllocateAreasAndPlacePlatformsForIt(List<Platform> platforms, Area area, MovingObjects player)
         {
-            int listSize = platform.platforms.Count - 1;
+            int listSize = platforms.Count - 1;
 
             for (int i = 0; i <= listSize; i++)
             {
-                foreach (Area exampleArea in platform.platforms[i].areas)
+                foreach (Area exampleArea in platforms[i].areas)
                 {
                     if (!exampleArea.PlatformPlaced && !exampleArea.Information.Contains("Spawn protection"))
                     {
-                        platform.Platforms.Add(area.CreateNewPlatforms(platform.platforms, exampleArea, platform.platforms[i], player));
-                        AllocateAreasForPlatform(platforms[platform.platforms.Count - 1], player);
+                        platforms.Add(area.CreateNewPlatforms(platforms, exampleArea, platforms[i], player));
+                        AllocateAreasForPlatform(platforms[platforms.Count - 1], player);
                     }
                 }
             }
         }
 
-        public void AllocateAreasForPlatform(Platform platform, Player player)
+        public void AllocateAreasForPlatform(Platform platform, MovingObjects player)
         {
-            float time = 0;
-            Vector2 distance;
+            float time = player.CalculatingTimeTillMaximumJumpHeight(new Vector2(player.InitialVelocity.X, 200), player.MaximumAcceleration);
+            Vector2 distance = player.CalculatingDistance(new Vector2(player.MaximumVelocity.X, 200), player.MaximumAcceleration, time);
             Random rand = new Random();
 
             if (platform.size.X < GetScreenWidth() && platform.areas.Count == 0) // Spawn protection area
@@ -146,7 +154,7 @@ namespace PixelJump
                 AllocateAreaOnPlatformLeft(player, platform);
                 platform.numberOfAreas = 1;
             }
-            else if((platform.numberOfAreas == 2 && platform.areas.Count < 2 && platform.size.X != GetScreenWidth()) || platform.position.X <= 150)
+            else if(((platform.numberOfAreas == 2 && platform.areas.Count < 2 && platform.size.X != GetScreenWidth()) || platform.position.X <= 150) && platform.size.X != GetScreenWidth())
             {
                 AllocateAreaOnPlatformRight(player, platform);
                 platform.numberOfAreas = 1;
@@ -156,7 +164,7 @@ namespace PixelJump
                 AllocateAreaOnPlatformLeft(player, platform);
                 AllocateAreaOnPlatformRight(player, platform);
             }
-            else if(platform.numberOfAreas == 1 && platform.areas.Count < 2)
+            else if(platform.numberOfAreas == 1 && platform.areas.Count < 2 && platform.size.X != GetScreenWidth())
             {
                 AllocateOneOfBothAreas(player, platform);
             }
@@ -165,8 +173,6 @@ namespace PixelJump
 
             if(platform.size.X == GetScreenWidth() && platform.areas.Count < 3) // Starting Platform
             {
-                time = player.CalculatingTimeTillMaximumJumpHeight(new Vector2(player.InitialVelocity.X, 200));
-                distance = player.CalculatingDistance(new Vector2(150, 200), new Vector2(0, (float)-9.8 * 18), time);
                 platform.Areas.Add(new Area(new Vector2(0, platform.position.Y - (int) (player.Size.Y * 1.5)), new Vector2(GetScreenWidth(), distance.Y), "Spawn protection", false)); // Spawn protection area
                 platform.Areas.Add(new Area(new Vector2(0, platform.Position.Y - distance.Y - player.Size.Y), new Vector2(distance.X, distance.Y), "Spawn Area left", false)); // Spawn area left
                 platform.Areas.Add(new Area(new Vector2(platform.size.X - distance.X, platform.Position.Y - distance.Y - player.Size.Y), new Vector2(distance.X, distance.Y), "Spawn Area left", false)); // Spawn area right
@@ -182,20 +188,7 @@ namespace PixelJump
             }
         }
 
-        private void AllocateAreaOnPlatformRight(Player player, Platform platform)
-        {
-            float time;
-            Vector2 distance;
-
-            if (platform.size.X < GetScreenWidth() && platform.position.X + platform.size.X < GetScreenWidth()) // Spawn Area area right
-            {
-                time = player.CalculatingTimeTillMaximumJumpHeight(new Vector2(player.InitialVelocity.X, 200));
-                distance = player.CalculatingDistance(new Vector2(150, 200), new Vector2(0, (float)-9.8 * 18), time);
-                platform.Areas.Add(new Area(new Vector2(platform.Position.X + platform.Size.X, platform.Position.Y - distance.Y - player.Size.Y), new Vector2(distance.X, distance.Y), "Spawn Area right", false));
-            }
-        }
-
-        private void AllocateAreaOnPlatformLeft(Player player, Platform platform)
+        private void AllocateAreaOnPlatformLeft(MovingObjects player, Platform platform)
         {
             float time;
             Vector2 distance;
@@ -204,8 +197,8 @@ namespace PixelJump
 
             if (platform.size.X < GetScreenWidth() && platform.position.X > 0) // Spawn area left
             {
-                time = player.CalculatingTimeTillMaximumJumpHeight(new Vector2(player.InitialVelocity.X, 200));
-                distance = player.CalculatingDistance(new Vector2(150, 200), new Vector2(0, (float)-9.8 * 18), time);
+                time = player.CalculatingTimeTillMaximumJumpHeight(new Vector2(player.InitialVelocity.X, 200), player.MaximumAcceleration);
+                distance = player.CalculatingDistance(new Vector2(player.MaximumVelocity.X, 200), player.MaximumAcceleration, time);
                 temporaryArea = new Area(new Vector2(platform.Position.X - distance.X, platform.Position.Y - distance.Y - player.Size.Y), new Vector2(distance.X, distance.Y), "Spawn Area left", false);
             }
 
@@ -217,7 +210,20 @@ namespace PixelJump
             platform.areas.Add(temporaryArea);
         }
 
-        private void AllocateOneOfBothAreas(Player player, Platform platform)
+        private void AllocateAreaOnPlatformRight(MovingObjects player, Platform platform)
+        {
+            float time;
+            Vector2 distance;
+
+            if (platform.size.X < GetScreenWidth() && platform.position.X + platform.size.X < GetScreenWidth()) // Spawn Area area right
+            {
+                time = player.CalculatingTimeTillMaximumJumpHeight(new Vector2(player.InitialVelocity.X, 200), player.MaximumAcceleration);
+                distance = player.CalculatingDistance(new Vector2(player.MaximumVelocity.X, 200), player.MaximumAcceleration, time);
+                platform.Areas.Add(new Area(new Vector2(platform.Position.X + platform.Size.X, platform.Position.Y - distance.Y - player.Size.Y), new Vector2(distance.X, distance.Y), "Spawn Area right", false));
+            }
+        }
+
+        private void AllocateOneOfBothAreas(MovingObjects player, Platform platform)
         {
             Random rand = new Random();
             int leftOrRight = 0;
@@ -233,6 +239,80 @@ namespace PixelJump
             else if(leftOrRight == 2 || platform.position.X == 0 || platform.position.X < 150)
             {
                 AllocateAreaOnPlatformRight(player, platform);
+            }
+        }
+
+        //-End-of-Screen-Boarder--//
+
+        public void GenerateNewPlatformsAndSaveOldOnes(List<List<Platform>> platformScreens, List<List<MovingObjects>> enemies, ref int numberOfCurrentScreen, MovingObjects player, MovingObjects enemy, Area area)
+        {
+            if(player.Position.Y < 100 && numberOfCurrentScreen == platformScreens.Count - 1)
+            {
+                Platform temporaryPlatform;
+
+                List<Platform> platforms = new List<Platform>();
+                platformScreens.Add(platforms);
+                List<MovingObjects> enemyScreen = new List<MovingObjects>();
+                enemies.Add(enemyScreen);
+
+                //-Take-over-platforms-under-Yposition-100-//
+
+                foreach (Platform platform in platformScreens[numberOfCurrentScreen])
+                {
+                    if (platform.position.Y < 100)
+                    {
+                        temporaryPlatform = new Platform(new Vector2(platform.position.X, platform.position.Y + GetScreenHeight()),
+                                                        platform.size,
+                                                        platform.color,
+                                                        platform.numberOfAreas,
+                                                        platform.information);
+
+                        foreach(Area placedArea in platform.Areas)
+                        {
+                            temporaryPlatform.areas.Add(new Area(new Vector2(placedArea.Position.X,
+                                                                 placedArea.Position.Y + GetScreenHeight()),
+                                                                 placedArea.Size,
+                                                                 placedArea.Information,
+                                                                 placedArea.PlatformPlaced));
+                        }
+
+                        platformScreens[numberOfCurrentScreen + 1].Add(temporaryPlatform);
+                    }
+                }
+
+                //-Add-new-Platforms-//
+
+                while (platformScreens[numberOfCurrentScreen+1][platformScreens[numberOfCurrentScreen+1].Count - 1].Position.Y > 0 /*platform.Platforms.Count < 12*/)
+                {
+                    AllocateAreasAndPlacePlatformsForIt(platformScreens[numberOfCurrentScreen+1], area, player);
+                    enemy.InitilizePlatforms(platformScreens[numberOfCurrentScreen+1], enemies[numberOfCurrentScreen+1]);  // Enemy size is 50 here, change in future
+                }
+
+                foreach(Platform platform in platformScreens[numberOfCurrentScreen + 1])
+                {
+                    if(platform.position.Y + platform.size.Y >= 0)
+                    {
+                        platformScreens[numberOfCurrentScreen].Add(new Platform(new Vector2(platform.position.X, platform.position.Y - GetScreenHeight()),
+                                                                                platform.size,
+                                                                                platform.color,
+                                                                                platform.numberOfAreas,
+                                                                                platform.information));
+                    }
+                }
+
+                platformScreens[numberOfCurrentScreen] = sortPlatforms(platformScreens[numberOfCurrentScreen]);
+            }
+
+            int xyz = GetScreenHeight();
+            if (player.Position.Y <= 0)
+            {
+                player.Position = new Vector2(player.Position.X, player.Position.Y + GetScreenHeight());
+                numberOfCurrentScreen++;
+            }
+            else if(player.Position.Y > GetScreenHeight())
+            {
+                player.Position = new Vector2(player.Position.X, player.Position.Y - GetScreenHeight());
+                numberOfCurrentScreen--;
             }
         }
     }
